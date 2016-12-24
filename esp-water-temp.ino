@@ -30,7 +30,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // No default value for the api key, user must supply
-char thingspeak_api_key[18];
+char thingspeak_api_key[20];
 
 //flag for saving data
 bool shouldSaveConfig = false;
@@ -93,7 +93,7 @@ void setup(void)
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
-  WiFiManagerParameter custom_thingspeak_api_key("apikey", "api key", thingspeak_api_key, 16);
+  WiFiManagerParameter custom_thingspeak_api_key("apikey", "api key", thingspeak_api_key, 17);
 
   WiFiManager wifiManager;
 
