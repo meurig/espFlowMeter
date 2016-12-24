@@ -13,8 +13,6 @@
 
 // replace with your channel’s thingspeak API key,
 String apiKey = "XEWWEB4L1RXHUZRF";
-//const char* ssid = "gordian-wifi";
-//const char* password = "mb16sY7p";
 
 const char* server = "api.thingspeak.com";
  
