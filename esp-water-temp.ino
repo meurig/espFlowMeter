@@ -97,9 +97,6 @@ void setup(void)
 
   WiFiManager wifiManager;
 
-  //reset settings - for testing
-  //wifiManager.resetSettings();
-
   //set config save notify callback
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
