@@ -6,6 +6,9 @@
 #include <OneWire.h>            //https://github.com/PaulStoffregen/OneWire
 #include <DallasTemperature.h>
 
+// For DHT22 Tempa nd humidity sensor
+#include <DHT.h>
+
 // For connecting to thingspeak
 #include <ESP8266WiFi.h>        //https://github.com/esp8266/Arduino
 
@@ -29,8 +32,13 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
+// For DHT
+#define DHTPIN 2 // what pin we’re connected to
+DHT dht(DHTPIN, DHT22,15);
+
 // No default value for the api key, user must supply
 char thingspeak_api_key[20];
+char sensor_type[8] = "DS"; //Default to DS18B20
 
 //flag for saving data
 bool shouldSaveConfig = false;
@@ -79,6 +87,7 @@ void setup(void)
           Serial.println("\nparsed json");
           
           strcpy(thingspeak_api_key, json["thingspeak_api_key"]);
+          strcpy(sensor_type, json["sensor_type"]);
 
         } else {
           Serial.println("failed to load json config");
@@ -94,6 +103,7 @@ void setup(void)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
   WiFiManagerParameter custom_thingspeak_api_key("apikey", "api key", thingspeak_api_key, 17);
+  WiFiManagerParameter custom_sensor_type("sensortype", "sensor type (DS/DHT22)", sensor_type, 8);
 
   WiFiManager wifiManager;
 
@@ -102,6 +112,7 @@ void setup(void)
 
   //add all your parameters here
   wifiManager.addParameter(&custom_thingspeak_api_key);
+  wifiManager.addParameter(&custom_sensor_type);
 
   //reset settings - for testing
   //wifiManager.resetSettings();
@@ -112,6 +123,7 @@ void setup(void)
   Serial.println("connected...yeey :)");
 
   strcpy(thingspeak_api_key, custom_thingspeak_api_key.getValue());
+  strcpy(sensor_type, custom_sensor_type.getValue());
 
   //save the custom parameters to FS
   if (shouldSaveConfig) {
@@ -119,6 +131,7 @@ void setup(void)
     DynamicJsonBuffer jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
     json["thingspeak_api_key"] = thingspeak_api_key;
+    json["sensor_type"] = sensor_type;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
@@ -130,29 +143,53 @@ void setup(void)
     configFile.close();
     //end save
   }
-  
-  // Start up the DallasTemperature library
-  sensors.begin();
+
+  if (String(sensor_type) == "DHT22")
+  {
+    // Start the DHT library
+    delay(10);
+    dht.begin();
+  }
+  else
+  {
+    // Start up the DallasTemperature library
+    sensors.begin();
+  }
 }
- 
- 
+
 void loop(void)
 {
-  // call sensors.requestTemperatures() to issue a global temperature
-  // request to all devices on the bus
-  Serial.print(" Requesting temperatures...");
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  Serial.println("DONE");
-
-  Serial.print("Temperature for Device 1 is: ");
-
-  float t = sensors.getTempCByIndex(0); // Why "byIndex"? 
-  float h = 0;
+  float t;
+  float h;
+  if (String(sensor_type) == "DHT22")
+  {
+    // DHT
+    h = dht.readHumidity();
+    t = dht.readTemperature();
+    if (isnan(h) || isnan(t)) {
+      Serial.println("Failed to read from DHT sensor!");
+      return;
+    }
+  }
+    else
+  {
+    // call sensors.requestTemperatures() to issue a global temperature
+    // request to all devices on the bus
+    Serial.print(" Requesting temperatures...");
+    sensors.requestTemperatures(); // Send the command to get temperatures
+    Serial.println("DONE");
   
-  Serial.println(t);
-    // You can have more than one IC on the same bus. 
-    // 0 refers to the first IC on the wire
-    
+    Serial.print("Temperature for Device 1 is: ");
+  
+    // DS18B20
+    t = sensors.getTempCByIndex(0);
+        // Why "byIndex"? 
+        // You can have more than one IC on the same bus. 
+        // 0 refers to the first IC on the wire
+    h = 0;
+    Serial.println(t);
+  }
+
   if (client.connect(server,80)) { // "184.106.153.149" or api.thingspeak.com
     String apiKey = String(thingspeak_api_key);
     String postStr = apiKey;
@@ -172,14 +209,16 @@ void loop(void)
     client.print("\n\n");
     client.print(postStr);
 
-    Serial.print("ApiKey: ");
+    Serial.print("Api Key: ");
     Serial.println(thingspeak_api_key);
-    Serial.println("");
+    Serial.print("Sensor Type: ");
+    Serial.println(sensor_type);
     Serial.print("Temperature: ");
     Serial.print(t);
     Serial.print(" degrees Celcius Humidity: ");
     Serial.print(h);
     Serial.println("% send to Thingspeak");
+    Serial.println("");
   }
   client.stop();
   
