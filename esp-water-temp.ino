@@ -17,8 +17,8 @@
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
 
-// replace with your channel’s thingspeak API key,
-//String apiKey = "XEWWEB4L1RXHUZRF";
+#define RECONFIG_BUTTON_PIN 0
+volatile byte reconfig_state = HIGH;
 
 const char* server = "api.thingspeak.com";
  
@@ -53,6 +53,9 @@ WiFiClient client;
  
 void setup(void)
 {
+  pinMode(RECONFIG_BUTTON_PIN, INPUT_PULLUP); // button default is HIGH
+  attachInterrupt(RECONFIG_BUTTON_PIN, pressedButton, FALLING); 
+  
   // start serial port
   Serial.begin(115200);
   Serial.println("temperature_esp01_ds18B20_thingspeak_wifimanager");
@@ -225,5 +228,42 @@ void loop(void)
   Serial.println("Waiting…");
   // thingspeak needs minimum 15 sec delay between updates
   delay(20000);
+
+  if (reconfig_state == LOW)
+  {
+    // If button is held low, delete the config file
+    if (digitalRead(RECONFIG_BUTTON_PIN) == LOW)
+    {
+      delay(2000); // Make sure it really is held low and not just bad timing
+    }
+    if (digitalRead(RECONFIG_BUTTON_PIN) == LOW)
+    {
+      if (SPIFFS.exists("/config.json")) {
+        //file exists - kill it! to be used during testing
+        Serial.println("removing config file");
+        SPIFFS.remove("/config.json");
+        
+        // Ensure the button's been released before restarting to avoid reflash boot mode
+        while (digitalRead(RECONFIG_BUTTON_PIN) == LOW)
+        {
+          Serial.println("Release button to restart");
+          delay(1000);
+        }
+      }
+    }
+
+    WiFi.disconnect(); // will erase ssid/password
+  
+    ESP.restart();
+    delay(1000);
+  }
+}
+
+void pressedButton() {
+  if (reconfig_state != LOW)
+  {
+    Serial.println(F("BUTTON PRESSED !!!"));
+    reconfig_state = LOW;   // interrupt service routine (ISR) can ONLY modify VOLATILE variables
+  }
 }
 
