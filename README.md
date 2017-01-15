@@ -4,9 +4,11 @@ Log water temp to thingspeak using an esp-01 and a ds18B20 temp sensor
 ## Dependencies
 - Requires the OneWire Library from here: https://github.com/PaulStoffregen/OneWire
 - Requires the WifiManager Library from here: https://github.com/tzapu/WiFiManager
+- Requires the DallasTemperature Library from here: https://github.com/milesburton/Arduino-Temperature-Control-Library
+- Requires the DHT Library from here: https://github.com/adafruit/DHT-sensor-library
 
 ## Hardware
-When purchased in bulk (10pcs), component costs come in at around £2.80 for a basic DS18B20 or DHT11 sensor, or about £5 for a higher resolution DHT22.
+When purchased in bulk (10pcs), component costs come in at around £3 for a basic DS18B20 or DHT11 sensor, or about £5 for a higher resolution DHT22.
 
 ### Sensors
 - DS18B20 £0.50 http://www.ebay.co.uk/itm/10Pcs-DALLAS-DS18B20-18B20-TO-92-Thermometer-Temperature-Sensor-MO-/152236378750?hash=item2371feca7e:g:ZcEAAOSwXeJYNBLN
@@ -24,4 +26,4 @@ When purchased in bulk (10pcs), component costs come in at around £2.80 for a b
 - Smoothing Capacitor £0.03 http://www.ebay.co.uk/itm/40-Pcs-1000uF-6-3V-105-Radial-Electrolytic-Capacitors-Dark-green-8x12mm-BT-/282240517215?_trksid=p2349526.m2548.l4275
 
 ### For programming
-3.3V FTDI module £1.42 http://www.ebay.co.uk/itm/262693491468
+- 3.3V FTDI module £1.42 http://www.ebay.co.uk/itm/262693491468
