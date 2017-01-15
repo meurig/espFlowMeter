@@ -3,14 +3,14 @@
 #include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
 
 // For the temp sensor we're using
-#include <OneWire.h>            //https://github.com/PaulStoffregen/OneWire
-#include <DallasTemperature.h>
+#include <OneWire.h>              //https://github.com/PaulStoffregen/OneWire
+#include <DallasTemperature.h>    //https://github.com/milesburton/Arduino-Temperature-Control-Library
 
-// For DHT22 Tempa nd humidity sensor
-#include <DHT.h>
+// For DHT22 Temp and humidity sensor
+#include <DHT.h>                  //https://github.com/adafruit/DHT-sensor-library
 
 // For connecting to thingspeak
-#include <ESP8266WiFi.h>        //https://github.com/esp8266/Arduino
+#include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
 
 // To manage the wifi password etc
 #include <DNSServer.h>
