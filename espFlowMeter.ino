@@ -36,7 +36,7 @@ const char* server = "api.thingspeak.com";
 
 // No default value for the api key, user must supply
 char thingspeak_api_key[20];
-char sensor_type[8] = "YF-S201"; //Default to YF-S201
+char sensor_type[10] = "YF-S201"; //Default to YF-S201
 
 //flag for saving data
 bool shouldSaveConfig = false;
@@ -70,10 +70,12 @@ void setup(void)
       SPIFFS.remove("/config.json");
     }
     */
+
     if (SPIFFS.exists("/config.json")) {
       //file exists, reading and loading
       Serial.println("reading config file");
       File configFile = SPIFFS.open("/config.json", "r");
+      
       if (configFile) {
         Serial.println("opened config file");
         size_t size = configFile.size();
@@ -86,11 +88,8 @@ void setup(void)
         json.printTo(Serial);
         if (json.success()) {
           Serial.println("\nparsed json");
-          Serial.println("DEBUG A");
           strcpy(thingspeak_api_key, json["thingspeak_api_key"]);
-          Serial.println("DEBUG B");
           strcpy(sensor_type, json["sensor_type"]);
-          Serial.println("DEBUG C");
         } else {
           Serial.println("failed to load json config");
         }
@@ -100,8 +99,6 @@ void setup(void)
     Serial.println("failed to mount FS");
   }
   //end read
-
-  Serial.println("DEBUG 1");
   
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
@@ -110,8 +107,6 @@ void setup(void)
   WiFiManagerParameter custom_sensor_type("sensortype", "sensor type (DS/DHT22)", sensor_type, 8);
 
   WiFiManager wifiManager;
-
-  Serial.println("DEBUG 2");
   
   //set config save notify callback
   wifiManager.setSaveConfigCallback(saveConfigCallback);
@@ -122,8 +117,6 @@ void setup(void)
 
   //reset settings - for testing
   //wifiManager.resetSettings();
-
-  Serial.println("DEBUG 3");
   
   wifiManager.autoConnect();
 
@@ -185,9 +178,11 @@ void loop(void)
   }
   // Keep track of the cummulative flow rates
   cummFlow20s += l_hour;
+
+  delay(1000);
   
   // every 20 seconds, post the average of the last 20s worth of readings
-  if (loop_count = 20)
+  if (loop_count == 20)
   {
     int avgFlow20s = cummFlow20s / 20;
     
@@ -207,14 +202,15 @@ void loop(void)
       client.print(postStr.length());
       client.print("\n\n");
       client.print(postStr);
-  
+
+      yield;
       Serial.print("Api Key: ");
       Serial.println(thingspeak_api_key);
       Serial.print("Sensor Type: ");
       Serial.println(sensor_type);
       Serial.print("Flow Rate (20s average): ");
       Serial.print(avgFlow20s);
-      Serial.println("% send to Thingspeak");
+      Serial.println("l/hour send to Thingspeak");
       Serial.println("");
     }
     client.stop();
@@ -223,6 +219,7 @@ void loop(void)
     // thingspeak needs minimum 15 sec delay between updates
     // but we're handling this above, outside this if
     // delay(20000);
+    yield;
 
     // reset cummulative flow and loop counter
     loop_count = 0;
