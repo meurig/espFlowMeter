@@ -1,13 +1,12 @@
+/*
+Based on: YF‐ S201 Water Flow Sensor
+Water Flow Sensor output processed to read in litres/hour
+By: www.hobbytronics.co.uk
+*/
+
 // For the WifiManager to handle custom parameters (API key)
 #include <FS.h>                   //this needs to be first, or it all crashes and burns...
 #include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
-
-// For the temp sensor we're using
-#include <OneWire.h>              //https://github.com/PaulStoffregen/OneWire
-#include <DallasTemperature.h>    //https://github.com/milesburton/Arduino-Temperature-Control-Library
-
-// For DHT22 Temp and humidity sensor
-#include <DHT.h>                  //https://github.com/adafruit/DHT-sensor-library
 
 // For connecting to thingspeak
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
@@ -20,25 +19,24 @@
 #define RECONFIG_BUTTON_PIN 0
 volatile byte reconfig_state = HIGH;
 
-const char* server = "api.thingspeak.com";
- 
-// Data wire is plugged into pin 2 on the Arduino
-#define ONE_WIRE_BUS 2
- 
-// Setup a oneWire instance to communicate with any OneWire devices 
-// (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_BUS);
- 
-// Pass our oneWire reference to Dallas Temperature.
-DallasTemperature sensors(&oneWire);
+//Flow measuring stuff
+volatile int flow_frequency; // Measures flow sensor pulses
+unsigned int l_hour; // Calculated litres/hour
+unsigned char flowsensor = 2; // Sensor Input
+unsigned long currentTime;
+unsigned long cloopTime;
+unsigned int loop_count = 0;
+unsigned long cummFlow20s = 0;
+void flow () // Interrupt function
+{
+   flow_frequency++;
+}
 
-// For DHT
-#define DHTPIN 2 // what pin we’re connected to
-DHT dht(DHTPIN, DHT22,15);
+const char* server = "api.thingspeak.com";
 
 // No default value for the api key, user must supply
 char thingspeak_api_key[20];
-char sensor_type[8] = "DS"; //Default to DS18B20
+char sensor_type[8] = "YF-S201"; //Default to YF-S201
 
 //flag for saving data
 bool shouldSaveConfig = false;
@@ -58,7 +56,7 @@ void setup(void)
   
   // start serial port
   Serial.begin(115200);
-  Serial.println("temperature_esp01_ds18B20_thingspeak_wifimanager");
+  Serial.println("waterflow_YF-S201_thingspeak_wifimanager");
 
   //read configuration from FS json
   Serial.println("mounting FS...");
@@ -88,10 +86,11 @@ void setup(void)
         json.printTo(Serial);
         if (json.success()) {
           Serial.println("\nparsed json");
-          
+          Serial.println("DEBUG A");
           strcpy(thingspeak_api_key, json["thingspeak_api_key"]);
+          Serial.println("DEBUG B");
           strcpy(sensor_type, json["sensor_type"]);
-
+          Serial.println("DEBUG C");
         } else {
           Serial.println("failed to load json config");
         }
@@ -102,6 +101,8 @@ void setup(void)
   }
   //end read
 
+  Serial.println("DEBUG 1");
+  
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
@@ -110,6 +111,8 @@ void setup(void)
 
   WiFiManager wifiManager;
 
+  Serial.println("DEBUG 2");
+  
   //set config save notify callback
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
@@ -120,6 +123,8 @@ void setup(void)
   //reset settings - for testing
   //wifiManager.resetSettings();
 
+  Serial.println("DEBUG 3");
+  
   wifiManager.autoConnect();
 
   //if you get here you have connected to the WiFi
@@ -147,87 +152,82 @@ void setup(void)
     //end save
   }
 
-  if (String(sensor_type) == "DHT22")
+  if (String(sensor_type) == "YF-S201")
   {
-    // Start the DHT library
-    delay(10);
-    dht.begin();
+    // initialise code for flow meter
+    pinMode(flowsensor, INPUT);
+    digitalWrite(flowsensor, HIGH); // Optional Internal Pull-Up
+    //Serial.begin(9600);
+    attachInterrupt(flowsensor, flow, RISING); // Setup Interrupt
+    sei(); // Enable interrupts
+    currentTime = millis();
+    cloopTime = currentTime;
   }
   else
   {
-    // Start up the DallasTemperature library
-    sensors.begin();
+    // No other sensor types available yet
   }
 }
 
+
 void loop(void)
 {
-  float t;
-  float h;
-  if (String(sensor_type) == "DHT22")
+  currentTime = millis();
+  // Every second, calculate and print litres/hour
+  if(currentTime >= (cloopTime + 1000))
   {
-    // DHT
-    h = dht.readHumidity();
-    t = dht.readTemperature();
-    if (isnan(h) || isnan(t)) {
-      Serial.println("Failed to read from DHT sensor!");
-      return;
-    }
+    cloopTime = currentTime; // Updates cloopTime
+    // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
+    l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
+    flow_frequency = 0; // Reset Counter
+    Serial.print(l_hour, DEC); // Print litres/hour
+    Serial.println(" L/hour");
   }
-    else
+  // Keep track of the cummulative flow rates
+  cummFlow20s += l_hour;
+  
+  // every 20 seconds, post the average of the last 20s worth of readings
+  if (loop_count = 20)
   {
-    // call sensors.requestTemperatures() to issue a global temperature
-    // request to all devices on the bus
-    Serial.print(" Requesting temperatures...");
-    sensors.requestTemperatures(); // Send the command to get temperatures
-    Serial.println("DONE");
-  
-    Serial.print("Temperature for Device 1 is: ");
-  
-    // DS18B20
-    t = sensors.getTempCByIndex(0);
-        // Why "byIndex"? 
-        // You can have more than one IC on the same bus. 
-        // 0 refers to the first IC on the wire
-    h = 0;
-    Serial.println(t);
-  }
-
-  if (client.connect(server,80)) { // "184.106.153.149" or api.thingspeak.com
-    String apiKey = String(thingspeak_api_key);
-    String postStr = apiKey;
-    postStr +="&field1=";
-    postStr += String(t);
-    postStr +="&field2=";
-    postStr += String(h);
-    postStr += "\r\n\r\n";
+    int avgFlow20s = cummFlow20s / 20;
     
-    client.print("POST /update HTTP/1.1\n");
-    client.print("Host: api.thingspeak.com\n");
-    client.print("Connection: close\n");
-    client.print("X-THINGSPEAKAPIKEY: "+apiKey+"\n");
-    client.print("Content-Type: application/x-www-form-urlencoded\n");
-    client.print("Content-Length: ");
-    client.print(postStr.length());
-    client.print("\n\n");
-    client.print(postStr);
-
-    Serial.print("Api Key: ");
-    Serial.println(thingspeak_api_key);
-    Serial.print("Sensor Type: ");
-    Serial.println(sensor_type);
-    Serial.print("Temperature: ");
-    Serial.print(t);
-    Serial.print(" degrees Celcius Humidity: ");
-    Serial.print(h);
-    Serial.println("% send to Thingspeak");
-    Serial.println("");
-  }
-  client.stop();
+    if (client.connect(server,80)) { // "184.106.153.149" or api.thingspeak.com
+      String apiKey = String(thingspeak_api_key);
+      String postStr = apiKey;
+      postStr +="&field1=";
+      postStr += String(avgFlow20s);
+      postStr += "\r\n\r\n";
+      
+      client.print("POST /update HTTP/1.1\n");
+      client.print("Host: api.thingspeak.com\n");
+      client.print("Connection: close\n");
+      client.print("X-THINGSPEAKAPIKEY: "+apiKey+"\n");
+      client.print("Content-Type: application/x-www-form-urlencoded\n");
+      client.print("Content-Length: ");
+      client.print(postStr.length());
+      client.print("\n\n");
+      client.print(postStr);
   
-  Serial.println("Waiting…");
-  // thingspeak needs minimum 15 sec delay between updates
-  delay(20000);
+      Serial.print("Api Key: ");
+      Serial.println(thingspeak_api_key);
+      Serial.print("Sensor Type: ");
+      Serial.println(sensor_type);
+      Serial.print("Flow Rate (20s average): ");
+      Serial.print(avgFlow20s);
+      Serial.println("% send to Thingspeak");
+      Serial.println("");
+    }
+    client.stop();
+    
+    Serial.println("Waiting…");
+    // thingspeak needs minimum 15 sec delay between updates
+    // but we're handling this above, outside this if
+    // delay(20000);
+
+    // reset cummulative flow and loop counter
+    loop_count = 0;
+    cummFlow20s = 0;
+  }
 
   if (reconfig_state == LOW)
   {
@@ -257,6 +257,7 @@ void loop(void)
     ESP.restart();
     delay(1000);
   }
+  loop_count++;
 }
 
 void pressedButton() {
@@ -266,4 +267,3 @@ void pressedButton() {
     reconfig_state = LOW;   // interrupt service routine (ISR) can ONLY modify VOLATILE variables
   }
 }
-

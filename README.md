@@ -8,7 +8,7 @@ Log water flow to thingspeak using an esp-01 and a YF‐S201 flow meter
 When purchased in bulk (10pcs), component costs come in at around £5.
 
 ### Sensors
-- YS-S201 £2.08 http://www.ebay.co.uk/itm/5Pcs-Hall-Flow-Sensor-Water-Control-Dn15-1-30L-Min-Flowmeter-Diy-New-Ic-Develo-U-/122079697695?hash=item1c6c845b1f:g:9b4AAOSwHMJYIrMP
+- YF-S201 £2.08 http://www.ebay.co.uk/itm/5Pcs-Hall-Flow-Sensor-Water-Control-Dn15-1-30L-Min-Flowmeter-Diy-New-Ic-Develo-U-/122079697695?hash=item1c6c845b1f:g:9b4AAOSwHMJYIrMP
 
 ### Other Hardware
 - Connector £0.10 http://www.ebay.co.uk/itm/10-x-MICRO-USB-to-DIP-Adapter-5pin-Female-Connector-B-Type-PCB-Converter-/122258312781?hash=item1c7729ce4d:g:B7AAAOSwB09YR-cJ
