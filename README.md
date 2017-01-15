@@ -1,19 +1,14 @@
-# esp-water-temp
-Log water temp to thingspeak using an esp-01 and a ds18B20 temp sensor
+# espFlowMeter
+Log water flow to thingspeak using an esp-01 and a YF‐S201 flow meter
 
 ## Dependencies
-- Requires the OneWire Library from here: https://github.com/PaulStoffregen/OneWire
 - Requires the WifiManager Library from here: https://github.com/tzapu/WiFiManager
-- Requires the DallasTemperature Library from here: https://github.com/milesburton/Arduino-Temperature-Control-Library
-- Requires the DHT Library from here: https://github.com/adafruit/DHT-sensor-library
 
 ## Hardware
-When purchased in bulk (10pcs), component costs come in at around £3 for a basic DS18B20 or DHT11 sensor, or about £5 for a higher resolution DHT22.
+When purchased in bulk (10pcs), component costs come in at around £5.
 
 ### Sensors
-- DS18B20 £0.50 http://www.ebay.co.uk/itm/10Pcs-DALLAS-DS18B20-18B20-TO-92-Thermometer-Temperature-Sensor-MO-/152236378750?hash=item2371feca7e:g:ZcEAAOSwXeJYNBLN
-- DHT11 £0.49 http://www.ebay.co.uk/itm/10pcs-DHT11-DHT-11-Digital-Temperature-and-Humidity-Sensor-for-Arduino-/192055645655?hash=item2cb76895d7:g:Rm0AAOSw8w1X79ND
-- DHT22 £2.11 http://www.ebay.co.uk/itm/1-2-5-10PCS-DHT22-AM2302-Temperature-Humidity-Sensor-Replace-SHT11-SHT15-Module-/272484297869?var=&hash=item3f71546c8d:m:mGt9gF2SrPUPrgvcAIzpEHg
+- YS-S201 £2.08 http://www.ebay.co.uk/itm/5Pcs-Hall-Flow-Sensor-Water-Control-Dn15-1-30L-Min-Flowmeter-Diy-New-Ic-Develo-U-/122079697695?hash=item1c6c845b1f:g:9b4AAOSwHMJYIrMP
 
 ### Other Hardware
 - Connector £0.10 http://www.ebay.co.uk/itm/10-x-MICRO-USB-to-DIP-Adapter-5pin-Female-Connector-B-Type-PCB-Converter-/122258312781?hash=item1c7729ce4d:g:B7AAAOSwB09YR-cJ
